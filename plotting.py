@@ -34,7 +34,7 @@ def make_line(line=None, ax=None, p1=None, p2=None, **style_kwargs):
     return line
 
 
-def mod_line_args(d_list, size_scale=1.0, alpha_scale=1.0, zorder_offset=0):
+def mod_artist_props(d_list, size_scale=1.0, alpha_scale=1.0, zorder_offset=0):
     d_list_new = []
     for d in d_list:
         d_new = {key: value for key, value in d.items()}
@@ -45,11 +45,11 @@ def mod_line_args(d_list, size_scale=1.0, alpha_scale=1.0, zorder_offset=0):
     return d_list_new
 
 
-def draw_system_parametric(x, u, x_eq, u_eq, ax, artists, make_line_args):
-    d_list = make_line_args(x, u)
-    d_list = mod_line_args(d_list, zorder_offset=100)
-    d_list_eq = make_line_args(x_eq, u_eq)
-    d_list_eq = mod_line_args(d_list_eq, size_scale=1.0, alpha_scale=0.3)
+def draw_system_parametric(x, u, x_eq, u_eq, ax, artists, make_artist_props):
+    d_list = make_artist_props(x, u)
+    d_list = mod_artist_props(d_list, zorder_offset=100)
+    d_list_eq = make_artist_props(x_eq, u_eq)
+    d_list_eq = mod_artist_props(d_list_eq, size_scale=1.0, alpha_scale=0.3)
     if artists is None:
         artists = [None for d in d_list]
     return [make_line(line, ax, **d) for line, d in zip(artists+artists, d_list+d_list_eq)]

@@ -18,7 +18,7 @@ class ToySystem:
         self.K = get_gain(A, B, Q, R, S)
 
         self.fig, self.ax = setup_plot(system_str)
-        self.draw_system = partial(draw_system_parametric, make_line_args=self.make_line_args)
+        self.draw_system = partial(draw_system_parametric, make_artist_props=self.make_artist_props)
         self.artists = self.draw_system(self.x, self.u, self.x, self.u, self.ax, artists=None)
 
     def update(self, t):
@@ -74,7 +74,7 @@ def make_system_data(system_str=None):
             covr = np.diag([0, 0, 0.001, 0.001])
             return npr.multivariate_normal(mean, covr)
 
-        def make_line_args(x, u):
+        def make_artist_props(x, u):
             p1 = np.array([x[0], 0])
             p2 = p1 + length * np.array([np.sin(x[1]), np.cos(x[1])])
 
@@ -132,7 +132,7 @@ def make_system_data(system_str=None):
             covr = np.diag([0, 0, 0.01, 0.0002])
             return npr.multivariate_normal(mean, covr)
 
-        def make_line_args(x, u):
+        def make_artist_props(x, u):
             s, c = np.sin(-x[3]), np.cos(x[3])
             e = np.array([c, s])
             d = np.array([-s, c])
@@ -202,7 +202,7 @@ def make_system_data(system_str=None):
             covr = np.diag([0.0002, 0.0001, 0.0001, 0.004, 0.002, 0.002])
             return npr.multivariate_normal(mean, covr)
 
-        def make_line_args(x, u):
+        def make_artist_props(x, u):
             s, c = np.sin(x[2]), np.cos(x[2])
             e = np.array([c, s])
             d = np.array([-s, c])
@@ -274,7 +274,7 @@ def make_system_data(system_str=None):
             covr = np.diag([0.0002, 0.001, 0.0001])
             return npr.multivariate_normal(mean, covr)
 
-        def make_line_args(x, u):
+        def make_artist_props(x, u):
             body_angle = x[2]
             wheel_angle = x[2] + u[1]
             sb, cb = np.sin(body_angle), np.cos(body_angle)
@@ -312,4 +312,4 @@ def make_system_data(system_str=None):
                 disturbance=disturbance,
                 x_eq_list=x_eq_list,
                 u_eq_list=u_eq_list,
-                make_line_args=make_line_args)
+                make_artist_props=make_artist_props)

@@ -1,18 +1,25 @@
 from autograd import jacobian, hessian
 import autograd.numpy as np
 import autograd.numpy.linalg as la
-from scipy.linalg import solve_continuous_are
+from scipy.linalg import solve_continuous_lyapunov, solve_continuous_are
 
 from settings import period_eq, disturb
 
 
+def lyap(A, Q):
+    return solve_continuous_lyapunov(a=np.copy(A).T, q=-np.copy(Q))
+
+
 def care(A, B, Q, R, S=None):
-    return solve_continuous_are(a=np.copy(A), b=np.copy(B), q=np.copy(Q), r=np.copy(R), s=np.copy(S))
+    if S is None:
+        return solve_continuous_are(a=np.copy(A), b=np.copy(B), q=np.copy(Q), r=np.copy(R))
+    else:
+        return solve_continuous_are(a=np.copy(A), b=np.copy(B), q=np.copy(Q), r=np.copy(R), s=np.copy(S))
 
 
 def get_gain(A, B, Q, R, S):
     P = care(A, B, Q, R, S)
-    K = -la.solve(R, B.T.dot(P) + S.T)
+    K = -la.solve(R, np.dot(B.T, P) + S.T)
     return K
 
 
@@ -48,33 +55,45 @@ def policy(x, x_eq, u_eq, K):
     return u
 
 
-def step(x, policy, policy_params, dynamics, disturbance, stepsize, method='euler'):
+def step(x, policy, policy_params, dynamics, disturbance, step_size, method='euler'):
     u = policy(x, **policy_params)
     z = np.hstack([x, u])
     w = disturbance(z) if disturb else np.zeros_like(x)
     if method == 'euler':
-        x = x + stepsize*dynamics(z)
+        x = x + step_size*dynamics(z)
+    elif method == 'rk2':
+        x1 = np.copy(x)
+        u1 = np.copy(u)
+        z1 = np.hstack([x1, u1])
+        k1 = dynamics(z1)
+
+        x2 = x1 + step_size*k1
+        u2 = policy(x2, **policy_params)
+        z2 = np.hstack([x2, u2])
+        k2 = dynamics(z2)
+
+        x = x + (step_size/2)*(k1 + k2)
     elif method == 'rk4':
         x1 = np.copy(x)
         u1 = np.copy(u)
         z1 = np.hstack([x1, u1])
         k1 = dynamics(z1)
 
-        x2 = x1 + stepsize*k1/2
+        x2 = x1 + step_size*k1/2
         u2 = policy(x2, **policy_params)
         z2 = np.hstack([x2, u2])
         k2 = dynamics(z2)
 
-        x3 = x2 + stepsize*k2/2
+        x3 = x2 + step_size*k2/2
         u3 = policy(x3, **policy_params)
         z3 = np.hstack([x3, u3])
         k3 = dynamics(z3)
 
-        x4 = x3 + stepsize*k3
+        x4 = x3 + step_size*k3
         u4 = policy(x4, **policy_params)
         z4 = np.hstack([x4, u4])
         k4 = dynamics(z4)
 
-        x = x + (stepsize/6)*(k1 + 2*k2 + 2*k3 + k4)
-    x = x + (stepsize**0.5)*w
+        x = x + (step_size/6)*(k1 + 2*k2 + 2*k3 + k4)
+    x = x + (step_size**0.5)*w
     return x, u

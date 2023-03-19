@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 
 
 def setup_plot(title_str):
-    plt.close('all')
     fig, ax = plt.subplots(figsize=(3, 3))
     ax.axis('square')
     ax.autoscale(False)

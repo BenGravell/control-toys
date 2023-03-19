@@ -4,27 +4,34 @@ import autograd.numpy.random as npr
 from control import linearize, quadratize, get_gain, policy, step, set_eq
 from plotting import make_style_kwargs, setup_plot, draw_system_parametric
 
-from settings import stepsize, step_method
+from settings import step_size, step_method
 
 
 class ToySystem:
-    def __init__(self, system_str):
+    def __init__(self, system_str, draw=True):
+        self.system_str = system_str
         for key, value in make_system_data(system_str).items():
             setattr(self, key, value)
 
         self.x, self.u = self.x_eq_list[0], self.u_eq_list[0]
         A, B = linearize(self.dynamics, self.x, self.u)
         Q, R, S = quadratize(self.cost, self.x, self.u)
-        self.K = get_gain(A, B, Q, R, S)
+        self.lqr_data = dict(A=A, B=B, Q=Q, R=R, S=S)
+        self.K = get_gain(**self.lqr_data)
 
-        self.fig, self.ax = setup_plot(system_str)
+        if draw:
+            self.init_plot()
+
+    def init_plot(self):
+        self.fig, self.ax = setup_plot(self.system_str)
         self.draw_system = partial(draw_system_parametric, make_artist_props=self.make_artist_props)
         self.artists = self.draw_system(self.x, self.u, self.x, self.u, self.ax, artists=None)
 
     def update(self, t):
         x_eq, u_eq = set_eq(t, self.x_eq_list, self.u_eq_list)
         policy_params = dict(x_eq=x_eq, u_eq=u_eq, K=self.K)
-        self.x, self.u = step(self.x, policy, policy_params, self.dynamics, self.disturbance, stepsize=stepsize, method=step_method)
+        self.x, self.u = step(self.x, policy, policy_params, self.dynamics, self.disturbance,
+                              step_size=step_size, method=step_method)
         return self.draw_system(self.x, self.u, x_eq, u_eq, self.ax, self.artists)
 
 
@@ -129,7 +136,7 @@ def make_system_data(system_str=None):
 
         def disturbance(z):
             mean = np.zeros(n)
-            covr = np.diag([0, 0, 0.01, 0.0002])
+            covr = 0.01*np.diag([0, 0, 0.01, 0.0002])
             return npr.multivariate_normal(mean, covr)
 
         def make_artist_props(x, u):
